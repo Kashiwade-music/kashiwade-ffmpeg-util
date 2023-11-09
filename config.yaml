@@ -1,0 +1,36 @@
+ffmpeg_path: /usr/bin/ffmpeg
+commands:
+  - title: Make video lighter by using h264_nvenc CQ 32
+    options:
+      - flag: -cq
+        value: 32
+      - flag: -c:v
+        value: h264_nvenc
+    output_extension: .mp4
+    output_filename_suffix: _light
+    command:
+      [
+        "{{ffmpeg_path}}",
+        -i,
+        "{{input_path}}",
+        "{{options}}",
+        "{{output_path}}",
+      ]
+  - title: Concat videos by getting txt file
+    options:
+      - flag: -safe
+        value: 0
+      - flag: -c
+        value: copy
+    output_extension: .mp4
+    output_filename_suffix: _concat
+    command:
+      [
+        "{{ffmpeg_path}}",
+        -f,
+        concat,
+        -i,
+        "{{input_path}}",
+        "{{options}}",
+        "{{output_path}}",
+      ]
