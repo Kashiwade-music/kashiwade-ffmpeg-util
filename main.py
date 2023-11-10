@@ -287,7 +287,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--hash",
         type=str,
-        help="Hash code to select a command. If this option is specified, the command will be executed without user interaction. You are also need to set --input_path. This option is useful when you want to use kffmpeg in a script.",
+        help="Hash code to select a command. If this option is specified, the command will be executed without user interaction. You are also need to set --input_path. This option is useful when you want to use kffmpeg in a script. Hash code can be found in the console when you choose a command.",
     )
     parser.add_argument(
         "--input_path",
@@ -296,7 +296,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    startup_checker = StartupChecker()
+    startup_checker = StartupChecker(args)
     if startup_checker.result:
         print("Startup check passed.\n")
     else:
