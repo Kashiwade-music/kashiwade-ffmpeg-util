@@ -109,7 +109,18 @@ class StartupChecker:
             )
             self.result = False
         else:
-            self.__print_check_message("Args check passed.", True)
+            if self.args.hash in [
+                hashlib.sha256(str(command["title"]).encode()).hexdigest()[0:8]
+                for command in self.config["commands"]
+            ]:
+                self.__print_check_message(
+                    f"Hash {self.args.hash} found. Command title is [dodger_blue1]{[command['title'] for command in self.config['commands'] if hashlib.sha256(str(command['title']).encode()).hexdigest()[0:8] == self.args.hash][0]}[/dodger_blue1]",
+                    True,
+                )
+                self.result = True
+            else:
+                self.__print_check_message(f"Hash {self.args.hash} not found.", False)
+                self.result = False
             self.result = True
 
     def check_ffmpeg_executable(self):
