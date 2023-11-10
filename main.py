@@ -5,6 +5,11 @@ from rich.console import Console
 import subprocess
 import argparse
 import hashlib
+import sys
+
+
+def get_myself_path():
+    return os.path.abspath(sys.argv[0]) if hasattr(sys, "frozen") else __file__
 
 
 class Option(TypedDict):
@@ -51,10 +56,10 @@ class StartupChecker:
         Check if the config.yaml file exists. If not, create it and print a message.
         If it exists, print a message indicating that it was found.
         """
-        if not os.path.isfile(os.path.join(os.path.dirname(__file__), "config.yaml")):
+        if not os.path.isfile(os.path.join(os.path.dirname(get_myself_path()), "config.yaml")):
             self.create_config()
             self.__print_check_message(
-                f"config.yaml not found. -> created at {os.path.join(os.path.dirname(__file__), 'config.yaml')}",
+                f"config.yaml not found. -> created at {os.path.join(os.path.dirname(get_myself_path()), 'config.yaml')}",
                 False,
             )
             self.result = False
@@ -63,7 +68,7 @@ class StartupChecker:
             self.result = True
 
     def create_config(self):
-        with open(os.path.join(os.path.dirname(__file__), "config.yaml"), "w") as f:
+        with open(os.path.join(os.path.dirname(get_myself_path()), "config.yaml"), "w") as f:
             yaml.dump(
                 {
                     "ffmpeg_path": "/usr/bin/ffmpeg",
@@ -91,7 +96,7 @@ class StartupChecker:
             )
 
     def load_config(self):
-        with open(os.path.join(os.path.dirname(__file__), "config.yaml"), "r") as f:
+        with open(os.path.join(os.path.dirname(get_myself_path()), "config.yaml"), "r") as f:
             return yaml.load(f, Loader=yaml.FullLoader)
 
     def get_config(self) -> Config:
@@ -108,7 +113,7 @@ class StartupChecker:
                 "You need to specify --hash when you specify --input_path.", False
             )
             self.result = False
-        else:
+        elif self.args.hash is not None and self.args.input_path is not None:
             if self.args.hash in [
                 hashlib.sha256(str(command["title"]).encode()).hexdigest()[0:8]
                 for command in self.config["commands"]
@@ -121,6 +126,8 @@ class StartupChecker:
             else:
                 self.__print_check_message(f"Hash {self.args.hash} not found.", False)
                 self.result = False
+        else:
+            self.__print_check_message("No args specified.", True)
             self.result = True
 
     def check_ffmpeg_executable(self):
@@ -149,11 +156,11 @@ class Runner:
     def run(self):
         if self.args.config:
             self.__print_message(
-                f"config.yaml path is {os.path.join(os.path.dirname(__file__), 'config.yaml')}",
+                f"config.yaml path is {os.path.join(os.path.dirname(get_myself_path()), 'config.yaml')}",
                 True,
             )
             Console().print(self.config)
-            exit(0)
+            sys.exit(0)
         command: Command = self.__choose_command()
         input_path: str = self.__ask_input_path()
         options: list[Option] = (
@@ -173,7 +180,7 @@ class Runner:
                 ):
                     return command
             self.__print_message("Hash not found.", True)
-            exit(1)
+            sys.exit(1)
         else:
             self.__print_message("Choose a command.", True)
             for i, command in enumerate(self.config["commands"]):
@@ -264,7 +271,7 @@ class Runner:
                 ]
             )
             self.__print_message("Done.", True)
-            exit(0)
+            sys.exit(0)
         else:
             print()
             command_list = command["command"]
@@ -312,6 +319,6 @@ if __name__ == "__main__":
         print("Startup check passed.\n")
     else:
         print("Startup check failed.")
-        exit(1)
+        sys.exit(1)
     runner = Runner(startup_checker.get_config(), args)
     runner.run()
