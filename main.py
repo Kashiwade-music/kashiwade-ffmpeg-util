@@ -48,7 +48,7 @@ class StartupChecker:
         Check if the config.yaml file exists. If not, create it and print a message.
         If it exists, print a message indicating that it was found.
         """
-        if not os.path.isfile("config.yaml"):
+        if not os.path.isfile(os.path.join(os.path.dirname(__file__), "config.yaml")):
             self.create_config()
             self.__print_check_message(
                 f"config.yaml not found. -> created at {os.path.join(os.path.dirname(__file__), 'config.yaml')}",
@@ -60,7 +60,7 @@ class StartupChecker:
             self.result = True
 
     def create_config(self):
-        with open("config.yaml", "w") as f:
+        with open(os.path.join(os.path.dirname(__file__), "config.yaml"), "w") as f:
             yaml.dump(
                 {
                     "ffmpeg_path": "/usr/bin/ffmpeg",
@@ -88,7 +88,7 @@ class StartupChecker:
             )
 
     def load_config(self):
-        with open("config.yaml", "r") as f:
+        with open(os.path.join(os.path.dirname(__file__), "config.yaml"), "r") as f:
             return yaml.load(f, Loader=yaml.FullLoader)
 
     def get_config(self) -> Config:
