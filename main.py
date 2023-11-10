@@ -3,6 +3,7 @@ import yaml
 import os
 from rich.console import Console
 import subprocess
+import argparse
 
 
 class Option(TypedDict):
@@ -50,7 +51,7 @@ class StartupChecker:
         if not os.path.isfile("config.yaml"):
             self.create_config()
             self.__print_check_message(
-                f"config.yaml not found. -> created at {os.path.join(os.getcwd(), 'config.yaml')}",
+                f"config.yaml not found. -> created at {os.path.join(os.path.dirname(__file__), 'config.yaml')}",
                 False,
             )
             self.result = False
@@ -60,32 +61,31 @@ class StartupChecker:
 
     def create_config(self):
         with open("config.yaml", "w") as f:
-            with open("config.yaml", "w"):
-                yaml.dump(
-                    {
-                        "ffmpeg_path": "/usr/bin/ffmpeg",
-                        "commands": [
-                            {
-                                "title": "Make video lighter by using h264_nvenc CQ 32",
-                                "options": [
-                                    {"flag": "-cq", "value": 32},
-                                    {"flag": "-c:v", "value": "h264_nvenc"},
-                                ],
-                                "output_extension": ".mp4",
-                                "output_filename_suffix": "_light",
-                                "command": [
-                                    "{{ffmpeg_path}}",
-                                    "-i",
-                                    "{{input_path}}",
-                                    "{{options}}",
-                                    "{{output_path}}",
-                                ],
-                            }
-                        ],
-                    },
-                    f,
-                    default_flow_style=False,
-                )
+            yaml.dump(
+                {
+                    "ffmpeg_path": "/usr/bin/ffmpeg",
+                    "commands": [
+                        {
+                            "title": "Make video lighter by using h264_nvenc CQ 32",
+                            "options": [
+                                {"flag": "-cq", "value": 32},
+                                {"flag": "-c:v", "value": "h264_nvenc"},
+                            ],
+                            "output_extension": ".mp4",
+                            "output_filename_suffix": "_light",
+                            "command": [
+                                "{{ffmpeg_path}}",
+                                "-i",
+                                "{{input_path}}",
+                                "{{options}}",
+                                "{{output_path}}",
+                            ],
+                        }
+                    ],
+                },
+                f,
+                default_flow_style=False,
+            )
 
     def load_config(self):
         with open("config.yaml", "r") as f:
@@ -108,8 +108,9 @@ class StartupChecker:
 
 
 class Runner:
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: Config, args: argparse.Namespace) -> None:
         self.config = config
+        self.args = args
 
     def __print_message(self, message: str, is_from_system: bool):
         Console().print(
@@ -117,6 +118,13 @@ class Runner:
         )
 
     def run(self):
+        if self.args.config:
+            self.__print_message(
+                f"config.yaml path is {os.path.join(os.path.dirname(__file__), 'config.yaml')}",
+                True,
+            )
+            Console().print(self.config)
+            exit(0)
         command: Command = self.__choose_command()
         input_path: str = self.__ask_input_path()
         options: list[Option] = self.__modify_options(command["options"])
@@ -220,5 +228,15 @@ if __name__ == "__main__":
         print("Startup check failed.")
         exit(1)
 
-    runner = Runner(startup_checker.get_config())
+    parser = argparse.ArgumentParser("kffmpeg", description="A simple ffmpeg wrapper.")
+    parser.add_argument("-v", "--version", action="version", version="kffmpeg 0.0.1")
+    parser.add_argument(
+        "-c",
+        "--config",
+        action="store_true",
+        help="Show config.yaml and exit.",
+    )
+    args = parser.parse_args()
+
+    runner = Runner(startup_checker.get_config(), args)
     runner.run()
